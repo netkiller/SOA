@@ -1,0 +1,3 @@
+[14-Jul-2015 11:08:22 Asia/Hong_Kong] PHP Deprecated:  Function AMQPQueue::declare() is deprecated in /root/SOA/test/rabbitmq/publish.php on line 24
+[14-Jul-2015 14:58:04 Asia/Hong_Kong] PHP Parse error:  syntax error, unexpected 'Class' (T_CLASS) in /root/SOA/test/rabbitmq/publish.php on line 9
+[14-Jul-2015 15:23:00 Asia/Hong_Kong] PHP Notice:  Undefined offset: 4 in /root/SOA/test/rabbitmq/publish.php on line 10
