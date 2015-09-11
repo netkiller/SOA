@@ -1,5 +1,0 @@
-[14-Jul-2015 16:19:43 Asia/Hong_Kong] PHP Fatal error:  Uncaught exception 'Exception' with message 'Class "synchronous.class.php" could not be autoloaded' in /root/SOA/system/autoload.class.php:10
-Stack trace:
-#0 /root/SOA/bin/rabbitmq.php(88): __autoload('Synchronous')
-#1 {main}
-  thrown in /root/SOA/system/autoload.class.php on line 10
