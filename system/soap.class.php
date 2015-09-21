@@ -16,22 +16,15 @@ class SoapFramework extends \SoapServer{
 		ini_set('soap.wsdl_cache_enabled', '0');
 		ini_set('soap.wsdl_cache_ttl', '0'); 
 		*/
-		require(CFGPATH. '/default.php');
-		//global $database;
-		//global $firewall;
-		//global $permission;
 		
-		$this->config['database'] = $database;
-		$this->config['firewall'] = $firewall;
-		if($permission){
-			$this->config['permission'] = $permission;
-		}else{
-			$this->config['permission'] = null;
-		}
+		$this->config = include_once(CONFIG_FILE);
+		parent::__construct(null, array('uri' => "http://api.example.com"));
+		//date_default_timezone_set('Asia/Hong_Kong');
+		$this->logging = new \framework\log\Logging($logfile = $this->config['logdir'].'log.'.date('Y-m-d').'.log');
+		//$this->logging->debug($this->post);		
 		
-		parent::__construct(null, array('uri' => "http://webservice.example.com"));
-		$this->logging = new \framework\log\Logging($logfile = '../log/soap.'.date('Y-m-d').'.log');
-		$this->logging->debug($this->post);
+		
+		
 		$this->acl();
 		$this->load();
 		$this->setClass($this->class);
@@ -82,10 +75,12 @@ class SoapFramework extends \SoapServer{
 			}
 			if(array_key_exists($php_auth_user, $this->config['permission'])){
 				$class  = substr($request_uri, 1, strrpos($request_uri, '/')).$this->class;
-				$this->logging->debug($class);
+				//$this->logging->debug($class);
+				//$this->logging->debug($this->class);
 				if(array_key_exists($class, $this->config['permission'][$php_auth_user])){
-					if(in_array($this->method, $this->config['permission'][$php_auth_user][$this->class])){
-						$except = sprintf("Permission denied: %s->%s", $this->class,'');
+					if(in_array($this->method, $this->config['permission'][$php_auth_user][$class])){
+						$except = sprintf("Permission allow: %s->%s", $this->class, $this->method);
+						$this->logging->info($except);
 					}else{
 						$except = sprintf("Permission denied: class %s, method %s", $this->class, $this->method);
 						$this->logging->warning($except);

@@ -3,6 +3,7 @@ define ('BASEPATH', realpath(dirname(dirname(__FILE__))));
 define ('APPPATH', BASEPATH.'/library');
 define ('CFGPATH', BASEPATH.'/config');
 define ('FRAMEWORK_DIR', BASEPATH.'/system');
+define ('CONFIG_FILE', CFGPATH.'/development.php');
 define ('DEBUG', false);
 //define ('DEBUG', ture);
 require_once(FRAMEWORK_DIR. '/soap.class.php');
