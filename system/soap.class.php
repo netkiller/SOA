@@ -6,6 +6,9 @@ class SoapFramework extends \SoapServer{
 	private $class 	= null;
 	private $method	= null;
 	public function __construct($server = null) {
+		
+		$this->speed = $this->microtime_float();
+		
 		if(empty($server)){
 			$this->server = $_SERVER;
 		}else{
@@ -21,9 +24,8 @@ class SoapFramework extends \SoapServer{
 		parent::__construct(null, array('uri' => "http://api.example.com"));
 		//date_default_timezone_set('Asia/Hong_Kong');
 		$this->logging = new \framework\log\Logging($logfile = $this->config['logdir'].'log.'.date('Y-m-d').'.log');
-		//$this->logging->debug($this->post);		
-		
-		
+		$this->logging->info('SOAP Server start...');
+		$this->logging->debug($this->post);
 		
 		$this->acl();
 		$this->load();
@@ -33,7 +35,7 @@ class SoapFramework extends \SoapServer{
 	private function acl(){
 		if(in_array('HTTP_HOST',$this->config)){
 			$http_host		= $this->server['HTTP_HOST'];
-			$this->config['host'] = array('webservice.example.com');
+			$this->config['host'] = array('api.example.com');
 			if(!in_array($http_host, $this->config['host'])){
 				$except = sprintf("Permission host: %s", $http_host);
 				$this->logging->exception($except);
@@ -113,8 +115,17 @@ class SoapFramework extends \SoapServer{
 			$this->fault('Server',$msg);
 		}
 		return null;
-	}	
+	}
+	function microtime_float() 
+	{ 
+		list($usec, $sec) = explode(" ", microtime()); 
+		return ((float)$usec + (float)$sec); 
+	} 
+
 	public function __destruct() {
+		$speed = $this->microtime_float() - $this->speed;
 		$this->logging->info('SOAP Server disconnect...'."\n------");
+		$this->logging->debug('time: '. $speed);
+		
 	}
 }

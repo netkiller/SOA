@@ -6,6 +6,7 @@ define ('FRAMEWORK_DIR', BASEPATH.'/system');
 define ('CONFIG_FILE', CFGPATH.'/development.php');
 define ('DEBUG', false);
 //define ('DEBUG', ture);
+require_once(APPPATH. '/common.class.php');
 require_once(FRAMEWORK_DIR. '/soap.class.php');
 include_once( FRAMEWORK_DIR. '/logging.class.php' );
 use framework\soap;
