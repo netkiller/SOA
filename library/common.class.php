@@ -16,7 +16,7 @@ date_default_timezone_set('Asia/Hong_Kong');
 class Database extends PDO {
     public function __construct($server, $dbname = null) {
 
-		$config = include_once(CONFIG_FILE);
+		$config = include(CONFIG_FILE);
 
 		$cfg = $config['database'][$server];
 
