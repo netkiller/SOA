@@ -7,7 +7,7 @@ class SoapFramework extends \SoapServer{
 	private $method	= null;
 	public function __construct($server = null) {
 		
-		$this->speed = $this->microtime_float();
+		$this->speed = microtime(true);
 		
 		if(empty($server)){
 			$this->server = $_SERVER;
@@ -55,7 +55,7 @@ class SoapFramework extends \SoapServer{
 			$this->fault('Server',$except);
 		}
 
-		$this->logging->info(sprintf("SOAP Server connect %s", $remote_addr));
+		$this->logging->info(sprintf("Connect from %s", $remote_addr));
 		return null;
 	}
 	private function load(){
@@ -103,29 +103,29 @@ class SoapFramework extends \SoapServer{
 			if (class_exists($this->class)){
 				if(!method_exists($this->class, $this->method)){
 					$msg = 'Method isnot exist.';
+					$this->logging->warning($msg);
 					$this->fault('Server',$msg);
 				}
 			}else{
 				$msg = 'Object isnot exist.';
+				$this->logging->warning($msg);
 				$this->fault('Server',$msg);
 			}
 			$this->logging->info('Loading '.$this->class.'->'.$this->method);
 		}else{
 			$msg = "Cannot loading interface!";
+			$this->logging->error($msg);
 			$this->fault('Server',$msg);
 		}
 		return null;
 	}
-	function microtime_float() 
-	{ 
-		list($usec, $sec) = explode(" ", microtime()); 
-		return ((float)$usec + (float)$sec); 
-	} 
 
 	public function __destruct() {
-		$speed = $this->microtime_float() - $this->speed;
-		$this->logging->info('SOAP Server disconnect...'."\n------");
+		$speed = microtime(true) - $this->speed;
+		$this->logging->info('SOAP Server disconnect...');
 		$this->logging->debug('time: '. $speed);
+		$this->logging->info('-----');
+		
 		
 	}
 }
