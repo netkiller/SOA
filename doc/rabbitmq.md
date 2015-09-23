@@ -1,6 +1,13 @@
 Framework for RabbitMQ
 =====
 
+Install 3rdparty library
+-----
+
+### PHPMailer
+
+	git clone https://github.com/Synchro/PHPMailer.git /srv/php/lib/php/PHPMailer
+
 Running program
 -----
 
