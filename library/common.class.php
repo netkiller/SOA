@@ -3,19 +3,28 @@ if(!defined('BASEPATH')){
 	define('BASEPATH', realpath(dirname(dirname(__FILE__))));
 	define('APPPATH', BASEPATH.'/library');
 	define('CFGPATH', BASEPATH.'/config');
+	define('CONFIG_FILE', CFGPATH.'/'.'development.php');
 }
+if(!defined('CONFIG_FILE')){
+	define('CONFIG_FILE', CFGPATH.'/'.'development.php');
+}
+	
 include_once( BASEPATH. '/system/logging.class.php' );
 use framework\log;
 date_default_timezone_set('Asia/Hong_Kong');
 
 class Database extends PDO {
-    public function __construct($dsn, $dbname = null) {
-		require(CFGPATH. '/default.php');
-		$cfg = $database[$dsn];
+    public function __construct($server, $dbname = null) {
+
+		$config = include(CONFIG_FILE);
+
+		$cfg = $config['database'][$server];
+
 		if($dbname){
-			$cfg['database'] = $dbname;
+			$cfg['dbname'] = $dbname;
 		}
-		$cfg['dsn'] = "mysql:host=".$cfg['host'].";port=".$cfg['port'].";dbname=".$cfg['database'];
+		$cfg['dsn'] = "mysql:host=".$cfg['host'].";port=".$cfg['port'].";dbname=".$cfg['dbname'];
+		
 		parent::__construct($cfg['dsn'], $cfg['username'], $cfg['password'], 
 			array(
 				/*PDO::MYSQL_ATTR_INIT_COMMAND => "set names ".$cfg['charset'],*/
@@ -78,17 +87,32 @@ Class Common{
 	public function getConfig(){
 		return $this->config;
 	}
-    public function database($dbname = null){
-		if($dbname){
-			return( new Database('master',$dbname) );
-		}else{
-			return( new Database('master') );
+    public function database($server = null){
+		
+		
+		$dbh = null;
+		
+		$config = include_once(CONFIG_FILE);
+		$cfg = $config['database'][$server];
+		$dsn = "mysql:host=".$cfg['host'].";port=".$cfg['port'].";dbname=".$cfg['dbname'];
+		try {
+			$dbh = new PDO($dsn, $cfg['username'], $cfg['password']);
+			$dbh->setAttribute ( PDO::ATTR_ERRMODE, PDO::ERRMODE_WARNING );
+		} catch (PDOException $e) {
+			echo 'Connection failed: ' . $e->getMessage();
 		}
+		
+		return $dbh;
+		//if($dbname){
+		//	return( new Database('master',$dbname) );
+		//}else{
+		//	return( new Database('master') );
+		//}
     }
-	/*
-	public function fetch(){
-		$this->fetch(PDO::FETCH_ASSOC);
+	
+	public function test(){
+		return "Test OK";
 	}
-	*/
+	
 
 };

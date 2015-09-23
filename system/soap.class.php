@@ -6,6 +6,9 @@ class SoapFramework extends \SoapServer{
 	private $class 	= null;
 	private $method	= null;
 	public function __construct($server = null) {
+		
+		$this->speed = microtime(true);
+		
 		if(empty($server)){
 			$this->server = $_SERVER;
 		}else{
@@ -16,22 +19,14 @@ class SoapFramework extends \SoapServer{
 		ini_set('soap.wsdl_cache_enabled', '0');
 		ini_set('soap.wsdl_cache_ttl', '0'); 
 		*/
-		require(CFGPATH. '/default.php');
-		//global $database;
-		//global $firewall;
-		//global $permission;
 		
-		$this->config['database'] = $database;
-		$this->config['firewall'] = $firewall;
-		if($permission){
-			$this->config['permission'] = $permission;
-		}else{
-			$this->config['permission'] = null;
-		}
-		
-		parent::__construct(null, array('uri' => "http://webservice.example.com"));
-		$this->logging = new \framework\log\Logging($logfile = '../log/soap.'.date('Y-m-d').'.log');
+		$this->config = include_once(CONFIG_FILE);
+		parent::__construct(null, array('uri' => "http://api.example.com"));
+		//date_default_timezone_set('Asia/Hong_Kong');
+		$this->logging = new \framework\log\Logging($logfile = $this->config['logdir'].'log.'.date('Y-m-d').'.log');
+		$this->logging->info('SOAP Server start...');
 		$this->logging->debug($this->post);
+		
 		$this->acl();
 		$this->load();
 		$this->setClass($this->class);
@@ -40,7 +35,7 @@ class SoapFramework extends \SoapServer{
 	private function acl(){
 		if(in_array('HTTP_HOST',$this->config)){
 			$http_host		= $this->server['HTTP_HOST'];
-			$this->config['host'] = array('webservice.example.com');
+			$this->config['host'] = array('api.example.com');
 			if(!in_array($http_host, $this->config['host'])){
 				$except = sprintf("Permission host: %s", $http_host);
 				$this->logging->exception($except);
@@ -60,7 +55,7 @@ class SoapFramework extends \SoapServer{
 			$this->fault('Server',$except);
 		}
 
-		$this->logging->info(sprintf("SOAP Server connect %s", $remote_addr));
+		$this->logging->info(sprintf("Connect from %s", $remote_addr));
 		return null;
 	}
 	private function load(){
@@ -82,10 +77,12 @@ class SoapFramework extends \SoapServer{
 			}
 			if(array_key_exists($php_auth_user, $this->config['permission'])){
 				$class  = substr($request_uri, 1, strrpos($request_uri, '/')).$this->class;
-				$this->logging->debug($class);
+				//$this->logging->debug($class);
+				//$this->logging->debug($this->class);
 				if(array_key_exists($class, $this->config['permission'][$php_auth_user])){
-					if(in_array($this->method, $this->config['permission'][$php_auth_user][$this->class])){
-						$except = sprintf("Permission denied: %s->%s", $this->class,'');
+					if(in_array($this->method, $this->config['permission'][$php_auth_user][$class])){
+						$except = sprintf("Permission allow: %s->%s", $this->class, $this->method);
+						$this->logging->info($except);
 					}else{
 						$except = sprintf("Permission denied: class %s, method %s", $this->class, $this->method);
 						$this->logging->warning($except);
@@ -106,20 +103,29 @@ class SoapFramework extends \SoapServer{
 			if (class_exists($this->class)){
 				if(!method_exists($this->class, $this->method)){
 					$msg = 'Method isnot exist.';
+					$this->logging->warning($msg);
 					$this->fault('Server',$msg);
 				}
 			}else{
 				$msg = 'Object isnot exist.';
+				$this->logging->warning($msg);
 				$this->fault('Server',$msg);
 			}
 			$this->logging->info('Loading '.$this->class.'->'.$this->method);
 		}else{
 			$msg = "Cannot loading interface!";
+			$this->logging->error($msg);
 			$this->fault('Server',$msg);
 		}
 		return null;
-	}	
+	}
+
 	public function __destruct() {
-		$this->logging->info('SOAP Server disconnect...'."\n------");
+		$speed = microtime(true) - $this->speed;
+		$this->logging->info('SOAP Server disconnect...');
+		$this->logging->debug('time: '. $speed);
+		$this->logging->info('-----');
+		
+		
 	}
 }
