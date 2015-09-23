@@ -12,6 +12,7 @@ class RabbitMQ {
 		$this->exchangeName	= $exchangeName;
 		$this->queueName	= $queueName;
 		$this->routeKey		= $routeKey; 
+
 	}
 	public function main(){
 		
@@ -111,8 +112,8 @@ class RabbitMQ {
 	}
 }
 
-//$rabbit = new RabbitMQ();
+//$rabbit = new RabbitMQ($exchangeName = 'email', $queueName = 'email', $routeKey = 'email');
 //$msg = json_encode(array('Class'=>'Test', 'Method'=>'sum', 'Param'=> array(1,2)));
 //echo $msg;
 //$rabbit->loader($msg);
-//$rabbit->ampq();
+//$rabbit->main();

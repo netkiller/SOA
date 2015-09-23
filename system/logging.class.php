@@ -3,7 +3,7 @@
 class Logging {
 	protected $file;
 	protected $logfile;
-	public function __construct($logfile = null){
+	public function __construct($logfile = null, $debug=false){
 		if($logfile){
 			$this->logfile = $logfile;
 		}
@@ -16,6 +16,7 @@ class Logging {
 			}
 		}
 		$this->file = fopen($this->logfile,"a+");
+		$this->isdebug = $debug;
 	}
 	public function __destruct() {
 		if($this->file){
@@ -45,7 +46,9 @@ class Logging {
 		$this->write(__FUNCTION__."\t".$msg);
 	}
 	public function debug($msg){
-		$this->write(__FUNCTION__."\t".$msg);
+		if($this->isdebug){
+			$this->write(__FUNCTION__."\t".$msg);
+		}
 	}
 	public function exception($msg){
 		$this->write(__FUNCTION__."\t".$msg);
