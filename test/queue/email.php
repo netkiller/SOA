@@ -1,11 +1,12 @@
 <?php
 //require_once( __DIR__.'/autoload.class.php' );
 
+$queueName = 'example';
 $exchangeName = 'email';
-$queueName = 'email';
 $routeKey = 'email';
 $mail = $argv[1];
-$message = empty($argv[2]) ? 'Hello World!' : ' '.$argv[2];
+$subject = $argv[2];
+$message = empty($argv[3]) ? 'Hello World!' : ' '.$argv[3];
 
  
 $connection = new AMQPConnection(array(
@@ -25,9 +26,22 @@ $queue->setName($queueName);
 $queue->setFlags(AMQP_DURABLE);
 $queue->declareQueue();
 
-$message ='{"Class":"Email","Method":"smtp","Param":["Neo","'.$mail.'","Test","Helloworld!!! '.$message.'"]}';
-$exchange->publish($message, $routeKey);
-var_dump("[x] Sent $message");
+$msg = array(
+	'Namespace'=>'namespace',
+	"Class"=>"Email",
+	"Method"=>"smtp",
+	"Param" => array(
+		$mail, $subject, $message, null
+	)
+);
+
+//$message ='{"Class":"Email","Method":"smtp","Param":["'.$mail.'","Test","Helloworld!!! '.$message.'"]}';
+//$exchange->publish($message, $routeKey);
+//var_dump("[x] Sent $message");
+
+
+$exchange->publish(json_encode($msg), $routeKey);
+printf("[x] Sent %s \r\n", json_encode($msg));
 
 
 $connection->disconnect();

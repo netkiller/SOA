@@ -125,7 +125,5 @@ class SoapFramework extends \SoapServer{
 		$this->logging->info('SOAP Server disconnect...');
 		$this->logging->debug('time: '. $speed);
 		$this->logging->info('-----');
-		
-		
 	}
 }

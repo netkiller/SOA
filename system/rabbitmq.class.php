@@ -5,9 +5,10 @@ require_once( __DIR__.'/autoload.class.php' );
 class RabbitMQ {
 	protected $queue;
 	public function __construct($exchangeName = '', $queueName = '', $routeKey = '') {
+
 		$this->config = new \framework\Config('mq');
 		$this->logfile = __DIR__.'/../log/'.__CLASS__.'.'.date('Y-m-d').'.log';
-		$this->logging = new \framework\log\Logging($this->logfile); //.H:i:s
+		$this->logging = new \framework\log\Logging($this->logfile, $debug=true); //.H:i:s
 
 		$this->exchangeName	= $exchangeName;
 		$this->queueName	= $queueName;
@@ -41,21 +42,28 @@ class RabbitMQ {
 			//echo 'Queue Bind: '.$bind."\n";
 			//阻塞模式接收消息
 			while(true){
+				
+				
 				//$this->queue->consume('processMessage', AMQP_AUTOACK); //自动ACK应答
 				$this->queue->consume(function($envelope, $queue) {
 					//print_r($envelope);
 					//print_r($queue);
 					
+					$speed = microtime(true);
+					
 					$msg = $envelope->getBody();
 					$result = $this->loader($msg);
 					$queue->ack($envelope->getDeliveryTag()); //手动发送ACK应答
 	
-					//$this->logging->info(''.$msg.' '.$result);
-					$this->logging->debug($msg.' '.$result);
+					//$this->logging->info(''.$msg.' '.$result)
+					$this->logging->debug('Protocol: '.$msg.' ');
+					$this->logging->debug('Result: '. $result.' ');
+					$this->logging->debug('Time: '. (microtime(true) - $speed) .'');
 				});
 				$this->channel->qos(0,1);
 
 				//echo "Message Total:".$this->queue->declare()."\n";
+				
 			}
 		}
 		catch(Exception $e){
@@ -70,14 +78,14 @@ class RabbitMQ {
 	// private
 	public  function loader($msg = null){
 		
-		$protocol = json_decode($msg,true);
+		$protocol 	= json_decode($msg,true);
+		$namespace	= $protocol['Namespace'];
+		$class 		= $protocol['Class'];
+		$method 	= $protocol['Method'];
+		$param 		= $protocol['Param'];
+		$result 	= null;
 
-		$class = $protocol['Class'];
-		$method = $protocol['Method'];
-		$param = $protocol['Param'];
-		$result = null;
-
-		$classspath = __DIR__.'/../queue/'.strtolower($class)  . '.class.php';
+		$classspath = __DIR__.'/../queue/'.$this->queueName.'/'.$namespace.'/'.strtolower($class)  . '.class.php';
 		if( is_file($classspath) ){
 			require_once($classspath);
 			//$class = ucfirst(substr($request_uri, strrpos($request_uri, '/')+1));
@@ -92,12 +100,11 @@ class RabbitMQ {
 					}else{
 						$tmp = call_user_func_array(array($obj, $method), $param);
 						$result = (json_encode($tmp));
-						$this->logging->info($class.'->'.$method.'('.implode(",", $param).')');
+						$this->logging->info($class.'->'.$method.'("'.implode('","', $param).'")');
 					}
 				}else{
 					$this->logging->error('Object',$class. '->' . $method. ' is not exist.');
 				}
-
 
 			}else{
 				$msg = sprintf("Object is not exist. (%s)", $class);
@@ -110,6 +117,8 @@ class RabbitMQ {
 		
 		return $result;
 	}
+	public function __destruct() {
+	}	
 }
 
 //$rabbit = new RabbitMQ($exchangeName = 'email', $queueName = 'email', $routeKey = 'email');

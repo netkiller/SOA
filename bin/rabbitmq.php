@@ -41,7 +41,7 @@ class RabbitDaemon{
 	private function start(){
 		$pid = $this->daemon();
 		for(;;){
-			$rabbit = new RabbitMQ($exchangeName = 'email', $queueName = 'email', $routeKey = 'email');
+			$rabbit = new RabbitMQ($exchangeName = 'email', $queueName = 'example', $routeKey = 'email');
 			$rabbit->main();
 			sleep(self::sleep);
 		}
