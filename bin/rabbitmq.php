@@ -13,9 +13,11 @@ class RabbitDaemon{
 	protected $pool 	= NULL;
 	protected $config	= array();
 
-	public function __construct() {
+	public function __construct($queue, $exchange, $route) {
 		$this->pidfile = '/var/run/'.self::pidfile.'.pid';
-		//$this->config = include_once("config.php");
+		$this->queue 	= $queue;
+		$this->exchange = $exchange;
+		$this->route 	= $route;
 	}
 	private function daemon(){
 		if (file_exists($this->pidfile)) {
@@ -27,22 +29,27 @@ class RabbitDaemon{
 		if ($pid == -1) {
 			 die('could not fork');
 		} else if ($pid) {
-			 // we are the parent
-			 //pcntl_wait($status); //Protect against Zombie children
 			exit($pid);
 		} else {
-			// we are the child
 			file_put_contents($this->pidfile, getmypid());
 			posix_setuid(self::uid);
 			posix_setgid(self::gid);
 			return(getmypid());
 		}
 	}
+	private function run(){
+		
+		$rabbit = new \framework\RabbitMQ($this->queue, $this->exchange, $this->route);
+		$rabbit->main();
+		
+	}
+	private function foreground(){
+		$this->run();
+	}
 	private function start(){
 		$pid = $this->daemon();
 		for(;;){
-			$rabbit = new RabbitMQ($exchangeName = 'email', $queueName = 'example', $routeKey = 'email');
-			$rabbit->main();
+			$this->run();
 			sleep(self::sleep);
 		}
 	}
@@ -61,7 +68,7 @@ class RabbitDaemon{
 		}
 	}
 	private function help($proc){
-		printf("%s start | stop | restart | status | help \n", $proc);
+		printf("%s start | stop | restart | foreground | status | help \n", $proc);
 	}
 	public function main($argv){
 
@@ -74,9 +81,11 @@ class RabbitDaemon{
 			$this->stop();
 		}else if($argv[1] === 'start'){
 			$this->start();
-                }else if($argv[1] === 'restart'){
+        }else if($argv[1] === 'foreground'){
+			$this->foreground();
+		}else if($argv[1] === 'restart'){
 			$this->stop();
-                        $this->start();
+            $this->start();
 		}else if($argv[1] === 'status'){
 			$this->status();
 		}else{
@@ -85,7 +94,7 @@ class RabbitDaemon{
 	}
 }
 
-$daemon = new RabbitDaemon();
+$daemon = new RabbitDaemon($queueName = 'example', $exchangeName = 'email', $routeKey = 'email');
 $daemon->main($argv);
 ?>
 

@@ -2,7 +2,9 @@
 namespace framework;
 
 class Config{
-	protected $config = array(
+	protected $config = null;
+	/*
+	array(
 		'db' => array(
 			'host' => '192.168.6.1',
 			'port' => '3306',
@@ -18,14 +20,16 @@ class Config{
 			'vhost'=>'/'
 		)
 	);
-	public function __construct($section) {
-		$this->section = $section;
+	*/
+	public function __construct($cfgfile = 'rabbitmq.ini') {
+		$this->config = parse_ini_file(__DIR__.'/../config/'.$cfgfile, true);
 	}
+
 	public function get($key = null){
 		if($key){
-			return($this->config[$this->section][$key]);
+			return($this->config[$key]);
 		}else{
-			return($this->config[$this->section]);
+			return($this->config);
 		}
 	}
 	public function getArray($sect = null){
@@ -36,3 +40,6 @@ class Config{
 		}
 	}
 }
+
+//$config = new Config('rabbitmq.ini');
+//print_r($config->get());

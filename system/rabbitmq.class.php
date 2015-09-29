@@ -1,37 +1,38 @@
 <?php
+namespace framework;
 
 require_once( __DIR__.'/autoload.class.php' );
 
 class RabbitMQ {
 	protected $queue;
-	public function __construct($exchangeName = '', $queueName = '', $routeKey = '') {
+	public function __construct($queueName = '', $exchangeName = '', $routeKey = '') {
 
-		$this->config = new \framework\Config('mq');
-		$this->logfile = __DIR__.'/../log/'.__CLASS__.'.'.date('Y-m-d').'.log';
+		$this->config = new \framework\Config('rabbitmq.ini');
+		$this->logfile = __DIR__.'/../log/rabbitmq.'.date('Y-m-d').'.log';
 		$this->logging = new \framework\log\Logging($this->logfile, $debug=true); //.H:i:s
 
-		$this->exchangeName	= $exchangeName;
 		$this->queueName	= $queueName;
+		$this->exchangeName	= $exchangeName;
 		$this->routeKey		= $routeKey; 
 
 	}
 	public function main(){
 		
-		$connection = new AMQPConnection($this->config->getArray('mq'));
+		$connection = new \AMQPConnection($this->config->get('mq'));
 		try {
 			$connection->connect();
 			if (!$connection->isConnected()) {
 				die("Cannot connect to the broker!".PHP_EOL);
 			}
-			$this->channel = new AMQPChannel($connection);
-			$this->exchange = new AMQPExchange($this->channel);
+			$this->channel = new \AMQPChannel($connection);
+			$this->exchange = new \AMQPExchange($this->channel);
 			$this->exchange->setName($this->exchangeName);
 			$this->exchange->setType(AMQP_EX_TYPE_DIRECT); //direct类型
 			$this->exchange->setFlags(AMQP_DURABLE); //持久化
 			$this->exchange->declareExchange();
 			//echo "Exchange Status:".$this->exchange->declare()."\n";
 			//创建队列
-			$this->queue = new AMQPQueue($this->channel);
+			$this->queue = new \AMQPQueue($this->channel);
 			$this->queue->setName($this->queueName);
 			$this->queue->setFlags(AMQP_DURABLE); //持久化
 			$this->queue->declareQueue();
@@ -42,8 +43,6 @@ class RabbitMQ {
 			//echo 'Queue Bind: '.$bind."\n";
 			//阻塞模式接收消息
 			while(true){
-				
-				
 				//$this->queue->consume('processMessage', AMQP_AUTOACK); //自动ACK应答
 				$this->queue->consume(function($envelope, $queue) {
 					//print_r($envelope);
@@ -66,8 +65,11 @@ class RabbitMQ {
 				
 			}
 		}
-		catch(Exception $e){
-			die( $e->__toString() );
+		catch(\AMQPConnectionException $e){
+			$this->logging->exception($e->__toString());
+		}
+		catch(\Exception $e){
+			$this->logging->exception($e->__toString());
 			$connection->disconnect();
 		}
 	}
