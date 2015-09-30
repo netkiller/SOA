@@ -15,7 +15,7 @@ class RabbitDaemon{
 	protected $config	= array();
 
 	public function __construct($queue, $exchange, $route) {
-		$this->pidfile = '/var/run/'.self::pidfile.'.pid';
+		$this->pidfile = '/var/run/'.self::pidfile.'.'.$queue.'.pid';
 		$this->queue 	= $queue;
 		$this->exchange = $exchange;
 		$this->route 	= $route;
@@ -45,6 +45,9 @@ class RabbitDaemon{
 		
 	}
 	private function foreground(){
+		posix_setuid(self::uid);
+		posix_setgid(self::gid);
+		
 		$this->run();
 	}
 	private function start(){
