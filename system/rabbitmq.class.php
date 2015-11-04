@@ -12,7 +12,7 @@ class RabbitMQ {
 	public function __construct($queueName = '', $exchangeName = '', $routeKey = '') {
 
 		$this->config = new \framework\Config('rabbitmq.ini');
-		$this->logfile = __DIR__.'/../log/rabbitmq.'.date('Y-m-d').'.log';
+		$this->logfile = __DIR__.'/../log/rabbitmq.%s.log';
 		$this->logging = new \framework\log\Logging($this->logfile, $debug=true); //.H:i:s
 		$this->classspath	= __DIR__.'/../queue';
 		

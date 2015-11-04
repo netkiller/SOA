@@ -7,6 +7,9 @@ class Logging {
 		if($logfile){
 			$this->logfile = $logfile;
 		}
+		
+		$this->logfile = sprintf($this->logfile, date ( 'Y-m-d' ));
+		
 		if(!file_exists(dirname($this->logfile))){
 			throw new \Exception('Directory '. dirname($this->logfile) ." isn't exist.");
 		}
