@@ -3,22 +3,24 @@ namespace framework;
 
 require_once( __DIR__.'/autoload.class.php' );
 
-class RabbitThread extends \Threaded {
+class RabbitThread extends \Thread {
 
+	private $logging;
 	private $queue;
 	public $classspath;
 	protected $msg;
 
-	public function __construct($queue, $logging, $msg) {
+	public function __construct($queue, $logfile, $msg) {
 		$this->classspath = __DIR__.'/../queue';
 		$this->msg = $msg;
-		$this->logging = $logging;
 		$this->queue = $queue;
+		$this->logfile = $logfile;
 	}
 	public function run() {
+		$this->logging = new \framework\log\Logging($this->logfile, $debug=true);
+		$this->logging->setThreadId($this->getCurrentThreadId());
 		$speed = microtime(true);
 		$result = $this->loader($this->msg);
-		$this->logging->debug('Result: '. $result.' ');
 		$this->logging->debug('Time: '. (microtime(true) - $speed) .'');
 	}
 	// private
@@ -41,11 +43,11 @@ class RabbitThread extends \Threaded {
 					if (!$param){
 						$tmp = $obj->$method();
 						$result = json_encode($tmp);
-						$this->logging->info($class.'->'.$method.'()');
+						$this->logging->info($class.'->'.$method.'() => '.$result);
 					}else{
 						$tmp = call_user_func_array(array($obj, $method), $param);
 						$result = (json_encode($tmp));
-						$this->logging->info($class.'->'.$method.'("'.implode('","', $param).'")');
+						$this->logging->info($class.'->'.$method.'("'.implode('","', $param).'") => '.$result);
 					}
 				}else{
 					$this->logging->error('Object '. $class. '->' . $method. ' is not exist.');
@@ -74,7 +76,7 @@ class RabbitMQ {
 		$this->config = new \framework\Config('rabbitmq.ini');
 		$this->logfile = __DIR__.'/../log/rabbitmq.%s.log';
 		$this->logqueue = __DIR__.'/../log/queue.%s.log';
-		$this->logging = new \framework\log\Logging($this->logfile, $debug=true); //.H:i:s
+		$this->logging = new \framework\log\Logging($this->logfile, $debug=$this->config->get('pool')['debug']); //.H:i:s
 		
 		$this->queueName	= $queueName;
 		$this->exchangeName	= $exchangeName;
@@ -82,7 +84,7 @@ class RabbitMQ {
 
 		//$this->pool = new \Pool(8, RabbitWorker::class, []);
 		$this->pool = new \Pool($this->config->get('pool')['thread']);
-
+		$this->logging->info("Start pool: ". $this->config->get('pool')['thread']);
 	}
 	public function main(){
 		
@@ -91,6 +93,8 @@ class RabbitMQ {
 			$connection->connect();
 			if (!$connection->isConnected()) {
 				$this->logging->exception("Cannot connect to the broker!".PHP_EOL);
+			}else{
+				$this->logging->info("Connect amqp server: ". $this->config->get('rabbitmq')['host']);
 			}
 			$this->channel = new \AMQPChannel($connection);
 			$this->exchange = new \AMQPExchange($this->channel);
@@ -117,7 +121,7 @@ class RabbitMQ {
 				$msg = $envelope->getBody();
 				$this->logging->debug('Protocol: '.$msg.' ');
 				//$result = $this->loader($msg);
-				$this->pool->submit(new RabbitThread($this->queueName, new \framework\log\Logging($this->logqueue, $debug=true), $msg));
+				$this->pool->submit(new RabbitThread($this->queueName, $this->logqueue, $msg));
 				$queue->ack($envelope->getDeliveryTag()); //手动发ACK应答
 			});
 			$this->channel->qos(0,1);
@@ -137,7 +141,7 @@ class RabbitMQ {
 		$this->logging->exception($msg);
 		throw new \Exception($tag.': '.$msg);
 	}
-	
+
 	public function __destruct() {
 	}	
 }

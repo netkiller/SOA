@@ -1,25 +1,28 @@
 <?php namespace framework\log;
 
 class Logging {
-	//protected $file;
 	protected $logfile;
-	public function __construct($logfile = null, $debug=false){
+	private $thread;
+
+	public function __construct($logfile = null, $debug=false, $thread = null){
 		if($logfile){
 			$this->logfile = $logfile;
-		}
-		
-		$this->logfile = sprintf($this->logfile, date ( 'Y-m-d' ));
-		
-		if(!file_exists(dirname($this->logfile))){
-			throw new \Exception('Directory '. dirname($this->logfile) ." isn't exist.");
-		}
-		if(file_exists($this->logfile)){
-			if(!is_writable($this->logfile)){
-				throw new \Exception('Directory '. $this->logfile ." isn't writable.");
+			$this->logfile = sprintf($this->logfile, date ( 'Y-m-d' ));
+	
+			if(!file_exists(dirname($this->logfile))){
+				throw new \Exception('Directory '. dirname($this->logfile) ." isn't exist.");
+			}
+			if(file_exists($this->logfile)){
+				if(!is_writable($this->logfile)){
+					throw new \Exception('Directory '. $this->logfile ." isn't writable.");
+				}
 			}
 		}
 		//$this->file = fopen($this->logfile,"a+");
 		$this->isdebug = $debug;
+		if($thread){
+			$this->thread = $thread;
+		}
 	}
 	public function __destruct() {
 		//if($this->file){
@@ -34,12 +37,17 @@ class Logging {
 	public function format($logpath = '/tmp', $prefix = "debug", $suffix = "log") {
 		$this->logfile = $logpath.'/'.$prefix.'.'.date('Y-m-d.H:i:s').'.'. $suffix;
 	}
+	
+	public function setThreadId($thread){
+		$this->thread = $thread;
+	}
+	
 	private function write($msg){
 		//if($this->file){
 			//fwrite($this->file,date('Y-m-d H:i:s')."\t".$msg."\r\n");
 		//}
-		$msg = date('Y-m-d H:i:s')."\t".$msg."\r\n";
-		file_put_contents($this->logfile, $msg, FILE_APPEND | LOCK_EX);
+		$output = sprintf("%s %s %s\r\n", date('Y-m-d H:i:s'), $this->thread, $msg);
+		file_put_contents($this->logfile, $output, FILE_APPEND | LOCK_EX);
 	}
 	public function info($msg){
 		$this->write(__FUNCTION__."\t".$msg);
@@ -58,5 +66,4 @@ class Logging {
 	public function exception($msg){
 		$this->write(__FUNCTION__."\t".$msg);
 	}
-
 }
