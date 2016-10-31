@@ -1,8 +1,8 @@
 #!/bin/sh
 
-LOGFILE=/var/log/$(basename $0 .sh).log
+LOGFILE=/srv/SOA/log/$(basename $0 .sh).log
 PATTERN="rabbitmq.php"
-RECOVERY="/etc/init.d/php-fpm restart"
+RECOVERY="php /srv/SOA/sbin/rabbitmq.php restart"
 
 while true
 do
