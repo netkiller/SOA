@@ -1,7 +1,7 @@
 <?php namespace framework\log;
 
 class Logging {
-	protected $file;
+	//protected $file;
 	protected $logfile;
 	public function __construct($logfile = null, $debug=false){
 		if($logfile){
@@ -18,13 +18,13 @@ class Logging {
 				throw new \Exception('Directory '. $this->logfile ." isn't writable.");
 			}
 		}
-		$this->file = fopen($this->logfile,"a+");
+		//$this->file = fopen($this->logfile,"a+");
 		$this->isdebug = $debug;
 	}
 	public function __destruct() {
-		if($this->file){
-			fclose($this->file);
-		}
+		//if($this->file){
+			//fclose($this->file);
+		//}
 	}
 	public function filename($logfile = null){
 		if($logfile){
@@ -35,9 +35,11 @@ class Logging {
 		$this->logfile = $logpath.'/'.$prefix.'.'.date('Y-m-d.H:i:s').'.'. $suffix;
 	}
 	private function write($msg){
-		if($this->file){
-			fwrite($this->file,date('Y-m-d H:i:s')."\t".$msg."\r\n");
-		}
+		//if($this->file){
+			//fwrite($this->file,date('Y-m-d H:i:s')."\t".$msg."\r\n");
+		//}
+		$msg = date('Y-m-d H:i:s')."\t".$msg."\r\n";
+		file_put_contents($this->logfile, $msg, FILE_APPEND | LOCK_EX);
 	}
 	public function info($msg){
 		$this->write(__FUNCTION__."\t".$msg);
