@@ -74,7 +74,7 @@ class RabbitMQ {
 	public function __construct($queueName = '', $exchangeName = '', $routeKey = '') {
 
 		$this->config = new \framework\Config('rabbitmq.ini');
-		$this->logfile = __DIR__.'/../log/rabbitmq.%s.log';
+		$this->logfile = __DIR__.'/../log/rabbitmq.log';
 		$this->logqueue = __DIR__.'/../log/queue.%s.log';
 		$this->logging = new \framework\log\Logging($this->logfile, $debug=$this->config->get('pool')['debug']); //.H:i:s
 		
@@ -97,6 +97,8 @@ class RabbitMQ {
 				$this->logging->info("Connect amqp server: ". $this->config->get('rabbitmq')['host']);
 			}
 			$this->channel = new \AMQPChannel($connection);
+			$this->channel->qos(0,1);
+			
 			$this->exchange = new \AMQPExchange($this->channel);
 			$this->exchange->setName($this->exchangeName);
 			$this->exchange->setType(AMQP_EX_TYPE_DIRECT); //direct类型
@@ -108,7 +110,6 @@ class RabbitMQ {
 			$this->queue->setName($this->queueName);
 			$this->queue->setFlags(AMQP_DURABLE); //持久�?
 			$this->queue->declareQueue();
-
 			$this->queue->bind($this->exchangeName, $this->routeKey);
 			//echo "Message Total:".$this->queue->declare()."\n";
 			//绑定交换机与队列，并指定路由�?
@@ -117,16 +118,24 @@ class RabbitMQ {
 			//while(true){
 			//for($i=0; $i< self::loop ;$i++){
 				//$this->queue->consume('processMessage', AMQP_AUTOACK); //自动ACK应答
-			$this->queue->consume(function($envelope, $queue) {
+				//echo "Message Total:".$this->queue->declare()."\n";
+			//}
+			$day = date("d");
+			$consume = $this->queue->consume(function($envelope, $queue) use($day) {
 				$msg = $envelope->getBody();
 				$this->logging->debug('Protocol: '.$msg.' ');
 				//$result = $this->loader($msg);
 				$this->pool->submit(new RabbitThread($this->queueName, $this->logqueue, $msg));
 				$queue->ack($envelope->getDeliveryTag()); //手动发ACK应答
+				$now = date("d");
+				if($day != $now){
+					$this->logging->debug('Sharding log :'.date("Y-m-d"));
+					return FALSE;
+				}
 			});
-			$this->channel->qos(0,1);
-				//echo "Message Total:".$this->queue->declare()."\n";
-			//}
+
+			$connection->disconnect();
+			$this->pool->shutdown();
 		}
 		catch(\AMQPConnectionException $e){
 			$this->logging->exception($e->__toString());
